@@ -8,9 +8,6 @@ import traceback
 from flask import send_from_directory
 import os
 
-from flask import request, jsonify
-import gspread
-from google.oauth2.service_account import Credentials
 
 
 app = Flask(__name__)
