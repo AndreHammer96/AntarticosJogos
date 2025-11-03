@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SCOUTS ANTARTICOS</title>
+  <h1 class="page-title"  >⚽ DOSSIÊ DOS PÉ DE RATO QUE NAO VÃO JOGAR ⚽</h1>
+	<!-- Ícones -->
+	<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/logo_v2.png') }}">
+	<link rel="shortcut icon" href="{{ url_for('static', filename='img/logo_v2.png') }}">
+	<link rel="apple-touch-icon" href="{{ url_for('static', filename='img/logo_v2.png') }}">
+	<link rel="icon" href="{{ url_for('static', filename='img/logo_v2.png') }}" type="image/png">
+
+
+  <style>
+    /* ==== SEU CSS ORIGINAL ==== */
+    :root{--bg:#f7f8fa;--card:#fff;--muted:#6b7280;--accent:#10b981;--border:#e6e9ed}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;background:var(--bg);margin:0;padding:20px;color:#111}
+    .wrap{max-width:none;margin:0 auto}
+    .card{background:var(--card);border-radius:12px;box-shadow:0 8px 20px rgba(20,30,40,0.06);padding:10px;border:2px solid var(--border);margin-bottom:50px}
+    h3{margin:0 0 10px 0;font-size:18px}
+    .period{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:12px}
+    .period .range{padding:14px;border-radius:10px;border:1px solid var(--border);background:#fbfdfe;font-weight:600;flex:1}
+    .period-selector{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .period-selector input{padding:8px;border-radius:6px;border:1px solid var(--border);min-width:120px}
+    .period-selector button{padding:8px 16px;background:var(--accent);color:white;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+    .main-content{display:flex;flex-direction:column;gap:16px}
+    .players-header{display:flex;justify-content:space-between;align-items:center;padding:12px 8px;border-bottom:2px solid var(--border);background:#f8f9fa;border-radius:8px 8px 0 0}
+    .players-header .sortable{cursor:pointer;user-select:none;padding:8px 12px;border-radius:6px;transition:background-color 0.2s}
+    .players-header .sortable:hover{background:#e9ecef}
+    .sortable::after{content:"↕";margin-left:6px;font-size:12px;opacity:0.6}
+    .sortable.asc::after{content:"↑";opacity:1;color:var(--accent)}
+    .sortable.desc::after{content:"↓";opacity:1;color:var(--accent)}
+    .player-name-sort{font-weight:700;flex:1}
+    .player-qtd-sort{font-weight:700;min-width:60px;text-align:center}
+    .player-pct-sort{font-weight:700;min-width:80px;text-align:center}
+    .list{margin-top:0;border:1px solid var(--border);border-radius:0 0 8px 8px;border-top:none}
+    .row{display:flex;justify-content:space-between;align-items:center;padding:14px 8px;border-bottom:1px solid var(--border);transition:background-color 0.2s}
+    .row:hover{background:#f8f9fa}
+    .row .name{font-weight:600;flex:1}
+    .row .qtd{font-size:18px;color:#111;min-width:60px;text-align:center}
+    .row .pct{font-size:14px;color:var(--muted);min-width:80px;text-align:center;font-weight:600}
+    .expand-all-btn{width:100%;padding:12px;margin-top:16px;background:#f8f9fa;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-weight:600;text-align:center;transition:background-color 0.2s}
+    .expand-all-btn:hover{background:#e9ecef}
+    .full-table{display:none;margin-top:16px;overflow:auto;max-height:70vh;border:1px solid var(--border);border-radius:8px}
+    .full-table table{width:100%;border-collapse:collapse;min-width:600px}
+    .full-table th,.full-table td{padding:12px 8px;text-align:center;border:1px solid var(--border);font-size:13px}
+    .full-table th{background:#f8f9fa;font-weight:600;position:sticky;top:0;z-index:10}
+    .full-table .player-name{text-align:left;font-weight:600;background:#f8f9fa;position:sticky;left:0;z-index:5;min-width:150px}
+    .full-table td.present{background:#d1fae5;color:#065f46}
+    .full-table td.absent{background:#fee2e2;color:#991b1b}
+	#fullTable th:first-child {  position: sticky;  left: 0;  background-color: #f4f4f4;  z-index: 3;}
+	#fullTable th {  position: sticky;  top: 0;  background-color: #f4f4f4;  z-index: 2;}
+	#fullTable td:first-child {	  position: sticky;	  left: 0;	  background-color: #fff; z-index: 1;}
+	.page-title{text-align: center;margin: 0 auto 24px auto;color: #1f2937;font-size: 3rem;font-weight: 1000;width: 100%;padding: 0 0px;}
+
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="period">
+      <div class="range" id="periodRange"></div>
+      <div class="period-selector">
+        <input type="date" id="startDate" value="2025-01-01">
+        <span>até</span>
+        <input type="date" id="endDate" value="2025-12-31">
+        <button id="applyPeriod">Aplicar</button>
+      </div>
+    </div>
+<div class="filters" style="margin-bottom:10px; display:flex; align-items:center; gap:10px;">
+  <input type="checkbox" id="showGuests" checked>
+  <label for="showGuests">Mostrar convidados</label>
+</div>
+
+    <div class="main-content">
+      <div class="players-header">
+        <div class="player-name-sort sortable" id="sortByName">Jogador</div>
+        <div class="player-qtd-sort sortable" id="sortByQtd">Jogos</div>
+        <div class="player-pct-sort sortable" id="sortByPct">%</div>
+      </div>
+      <div class="list" id="playersList"></div>
+    </div>
+
+    <button class="expand-all-btn" id="expandAllBtn">📊 VER TABELA COMPLETA</button>
+    <div class="full-table" id="fullTable">
+      <table>
+        <thead id="fullTableHeader"></thead>
+        <tbody id="fullTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+
+let jogadoresFlask = {{ jogadores | tojson | safe }};
+let games = {{ col_datas | tojson | safe }};
+
+let atualizado_em = "{{ atualizado_em }}";
+
+let attendance = {};
+for (const jogador of jogadoresFlask) {
+  for (const [data, valor] of Object.entries(jogador.jogos)) {
+    if (!attendance[data]) attendance[data] = {};
+    attendance[data][jogador.nome] = valor;
+  }
+}
+
+let players = jogadoresFlask.map(j => j.nome);
+let filteredGames = [...games];
+let currentSort = { field: 'name', direction: 'asc' };
+
+// ===== FUNÇÕES AUXILIARES =====
+function computeCounts(){
+  const counts = {};
+  const percentages = {};
+  const totalGames = filteredGames.length;
+  for (const j of jogadoresFlask) {
+    let c = 0;
+    for (const d of filteredGames) {
+      if (attendance[d] && attendance[d][j.nome]) c++;
+    }
+    counts[j.nome] = c;
+    percentages[j.nome] = totalGames > 0 ? (c / totalGames) * 100 : 0;
+  }
+  return {counts,percentages};
+}
+
+function updatePeriodDisplay(){
+  const rangeEl = document.getElementById("periodRange");
+  if (filteredGames.length > 0) {
+    const primeiro = filteredGames[0];
+    const ultimo = filteredGames[filteredGames.length - 1];
+    rangeEl.textContent = `Jogos no período: ${filteredGames.length}`;
+  } else {
+    rangeEl.textContent = "Nenhum jogo encontrado no período.";
+  }
+}
+
+function renderList(){
+  const container = document.getElementById('playersList');
+  container.innerHTML='';
+  const {counts,percentages}=computeCounts();
+  const showGuests = document.getElementById("showGuests").checked;
+  jogadoresFlask.forEach(j=>{
+    if(!showGuests && j.tipo === "convidado") return;
+    const row=document.createElement('div');
+    row.className='row';
+    row.innerHTML=`
+      <div class="name">${j.tipo === "time" ? '🐧 ' : ''}${j.nome}</div>
+      <div class="qtd">${counts[j.nome]}</div>
+      <div class="pct">${percentages[j.nome].toFixed(1)}%</div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function renderFullTable(){
+  const header=document.getElementById('fullTableHeader');
+  const body=document.getElementById('fullTableBody');
+  header.innerHTML='<tr><th class="player-name">Jogador</th>'+filteredGames.map(d=>`<th>${d}</th>`).join('')+'</tr>';
+  body.innerHTML='';
+  const showGuests = document.getElementById("showGuests").checked;
+  jogadoresFlask.forEach(j=>{
+    if(!showGuests && j.tipo === "convidado") return;
+    let row=`<tr><td class="player-name">${j.tipo === "time" ? '🐧 ' : ''}${j.nome}</td>`;
+    for(const d of filteredGames){
+      const played=attendance[d]&&attendance[d][j.nome];
+      row+=`<td class="${played?'present':'absent'}">${played?'✓':'✗'}</td>`;
+    }
+    row+='</tr>';
+    body.innerHTML+=row;
+  });
+}
+
+// re-renderiza quando o checkbox mudar
+document.getElementById("showGuests").addEventListener("change", ()=>{
+  renderList();
+  if (document.getElementById("fullTable").style.display === "block") renderFullTable();
+});
+
+
+// ===== ORDENAÇÃO =====
+function sortPlayers(field) {
+  const {counts,percentages}=computeCounts();
+  if (currentSort.field === field) {
+    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort.field = field;
+    currentSort.direction = 'asc';
+  }
+
+  jogadoresFlask.sort((a,b)=>{
+    let valueA, valueB;
+    if (field === 'name') {
+      valueA = a.nome.toLowerCase();
+      valueB = b.nome.toLowerCase();
+    } else if (field === 'qtd') {
+      valueA = counts[a.nome];
+      valueB = counts[b.nome];
+    } else if (field === 'pct') {
+      valueA = percentages[a.nome];
+      valueB = percentages[b.nome];
+    }
+
+    if (valueA < valueB) return currentSort.direction === 'asc' ? -1 : 1;
+    if (valueA > valueB) return currentSort.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  updateSortIndicators();
+  renderList();
+  if (document.getElementById('fullTable').style.display === 'block') {
+    renderFullTable();
+  }
+}
+
+function updateSortIndicators(){
+  const all=['sortByName','sortByQtd','sortByPct'];
+  all.forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.remove('asc','desc');
+    if(id==='sortByName' && currentSort.field==='name') el.classList.add(currentSort.direction);
+    if(id==='sortByQtd' && currentSort.field==='qtd') el.classList.add(currentSort.direction);
+    if(id==='sortByPct' && currentSort.field==='pct') el.classList.add(currentSort.direction);
+  });
+}
+
+// ===== FILTRAGEM DE PERÍODO =====
+document.getElementById("applyPeriod").addEventListener("click", () => {
+  const start = document.getElementById("startDate").value;
+  const end = document.getElementById("endDate").value;
+  if (!start || !end) return alert("Selecione as duas datas!");
+
+  // converte formato dd/mm/yyyy → Date
+  function parseDateBR(d) {
+    const [dia, mes, ano] = d.split("/");
+    return new Date(`${ano}-${mes}-${dia}`);
+  }
+
+  const startDate = new Date(start); // vem no formato yyyy-mm-dd
+  const endDate = new Date(end);
+
+  // filtra corretamente as datas da planilha
+  filteredGames = games.filter(d => {
+    const dateObj = parseDateBR(d);
+    return dateObj >= startDate && dateObj <= endDate;
+  });
+
+  renderList();
+  updatePeriodDisplay();
+  if (document.getElementById("fullTable").style.display === "block") {
+    renderFullTable();
+  }
+});
+
+
+// ===== EVENTOS =====
+document.getElementById('sortByName').addEventListener('click',()=>sortPlayers('name'));
+document.getElementById('sortByQtd').addEventListener('click',()=>sortPlayers('qtd'));
+document.getElementById('sortByPct').addEventListener('click',()=>sortPlayers('pct'));
+
+document.getElementById('expandAllBtn').addEventListener('click',()=>{
+  const t=document.getElementById('fullTable');
+  const visible=t.style.display==='block';
+  t.style.display=visible?'none':'block';
+  if(!visible)renderFullTable();
+});
+
+// ===== INICIALIZAÇÃO =====
+document.addEventListener('DOMContentLoaded',()=>{
+  renderList();
+  updateSortIndicators();
+  updatePeriodDisplay();
+});
+</script>
+
+
+</body>
+</html>
