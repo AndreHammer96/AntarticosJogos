@@ -13,6 +13,37 @@
 
 
   <style>
+  /* Ajusta espaçamento das colunas */
+.table-row, tr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px !important;
+}
+
+/* Diminui a distância entre colunas */
+td, th {
+  padding: 4px 8px !important;
+  text-align: left;
+  vertical-align: middle;
+}
+
+/* Evita que o nome e os números fiquem muito afastados */
+td:last-child, th:last-child {
+  text-align: right;
+  min-width: 60px;
+}
+
+/* Para telas pequenas (celular) */
+@media (max-width: 768px) {
+  td, th {
+    padding: 3px 6px !important;
+    font-size: 14px;
+  }
+  .table-row, tr {
+    padding: 2px 4px !important;
+  }
+}
     /* ==== SEU CSS ORIGINAL ==== */
     :root{--bg:#f7f8fa;--card:#fff;--muted:#6b7280;--accent:#10b981;--border:#e6e9ed}
     body{font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;background:var(--bg);margin:0;padding:20px;color:#111}
