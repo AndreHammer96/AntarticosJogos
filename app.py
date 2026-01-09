@@ -115,14 +115,16 @@ def index():
         atualizado_em=atualizado_em
     )
 def conectar_planilha():
-    if "GOOGLE_CREDENTIALS_JSON" not in os.environ:
-        raise RuntimeError("GOOGLE_CREDENTIALS_JSON não configurado")
+    raw = os.environ.get("GOOGLE_CREDENTIALS_JSON")
+    if not raw:
+        raise RuntimeError("Variável GOOGLE_CREDENTIALS_JSON não configurada no ambiente")
 
-    creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS_JSON"])
+    creds_dict = json.loads(raw)
     creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 
     client = gspread.authorize(creds)
     return client.open_by_key(GOOGLE_SHEET_ID).get_worksheet_by_id(int(GID_JOGOS))
+
 
 @app.route("/api/jogo", methods=["GET"])
 def carregar_jogo():
