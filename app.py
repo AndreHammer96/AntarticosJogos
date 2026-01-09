@@ -115,13 +115,20 @@ def index():
         atualizado_em=atualizado_em
     )
 def conectar_planilha():
-    raw = os.environ.get("GOOGLE_CREDENTIALS_JSON")
-    if not raw:
-        raise RuntimeError("Variável GOOGLE_CREDENTIALS_JSON não configurada no ambiente")
+    private_key = os.environ.get("GOOGLE_PRIVATE_KEY")
+    client_email = os.environ.get("GOOGLE_SERVICE_ACCOUNT_EMAIL")
 
-    creds_dict = json.loads(raw)
+    if not private_key or not client_email:
+        raise RuntimeError("Credenciais Google não configuradas corretamente")
+
+    creds_dict = {
+        "type": "service_account",
+        "client_email": client_email,
+        "private_key": private_key,
+        "token_uri": "https://oauth2.googleapis.com/token"
+    }
+
     creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-
     client = gspread.authorize(creds)
     return client.open_by_key(GOOGLE_SHEET_ID).get_worksheet_by_id(int(GID_JOGOS))
 
