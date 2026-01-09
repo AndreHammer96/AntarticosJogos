@@ -215,7 +215,88 @@
 	  object-fit:contain;
 	  vertical-align:middle;
 	}
+	#adminFab{
+	  position: fixed;
+	  bottom: 24px;
+	  right: 24px;
+	  width: 60px;
+	  height: 60px;
+	  border-radius: 50%;
+	  background: #10b981;
+	  color: #fff;
+	  font-size: 32px;
+	  border: none;
+	  cursor: pointer;
+	  box-shadow: 0 10px 20px rgba(0,0,0,.2);
+	  z-index: 999;
+	}
+	/* ===== ADMIN PANEL ===== */
+	#adminPanel{
+	  position: fixed;
+	  bottom: 100px;
+	  right: 24px;
+	  width: 320px;
+	  background: #fff;
+	  border: 2px solid var(--border);
+	  border-radius: 12px;
+	  box-shadow: 0 20px 40px rgba(0,0,0,.2);
+	  padding: 16px;
+	  z-index: 1000;
+	}
 
+	#adminPanel.hidden{
+	  display: none;
+	}
+
+	#adminPanel h2{
+	  margin-top: 0;
+	  font-size: 18px;
+	}
+
+	#playerSearch{
+	  width: 100%;
+	  padding: 8px;
+	  margin-bottom: 8px;
+	}
+
+	#autocompleteList{
+	  border: 1px solid var(--border);
+	  border-radius: 6px;
+	  max-height: 120px;
+	  overflow-y: auto;
+	  margin-bottom: 8px;
+	}
+
+	.autocomplete-item{
+	  padding: 6px 10px;
+	  cursor: pointer;
+	}
+
+	.autocomplete-item:hover{
+	  background: #f3f4f6;
+	}
+
+	#selectedPlayers{
+	  display: flex;
+	  flex-wrap: wrap;
+	  gap: 6px;
+	  margin-bottom: 12px;
+	}
+
+	.player-pill{
+	  background: #e5e7eb;
+	  border-radius: 20px;
+	  padding: 6px 10px;
+	  font-size: 13px;
+	  display: flex;
+	  align-items: center;
+	  gap: 6px;
+	}
+
+	.player-pill span{
+	  cursor: pointer;
+	  font-weight: bold;
+	}
 
 </style>
 
@@ -269,6 +350,36 @@
     </div>
   </div>
 </div>
+	<button id="adminFab">+</button>
+	<div id="adminPanel" class="hidden">
+	  <h2>Novo Jogo</h2>
+
+	  
+	  <label>Data do jogo</label>
+		<div style="display:flex; gap:8px; align-items:center;">
+		  <input type="date" id="gameDate">
+		  <button id="loadGame">Atualizar</button>
+		</div>
+	  <input type="text" id="playerSearch" placeholder="Digite o nome">
+		<div id="autocompleteList"></div>
+
+	  <div id="selectedPlayers"></div>
+		<label>🏆 Feijoada</label>
+		<select id="trofeuF">
+		  <option value="">— selecionar —</option>
+		</select>
+		<br>
+		<label>💩 Thy Oliveira</label>
+		<select id="trofeuT">
+		  <option value="">— selecionar —</option>
+		</select>
+	  <button id="saveGame">Salvar</button>
+	</div>
+
+	<hr>
+
+	
+
 
 <script>
 let jogadoresFlask = {{ jogadores | tojson | safe }};
@@ -500,6 +611,18 @@ function renderFullTable(){
   });
 }
 
+function atualizarSelectsTrofeu(){
+  const selectF = document.getElementById("trofeuF");
+  const selectT = document.getElementById("trofeuT");
+
+  selectF.innerHTML = '<option value="">— selecionar —</option>';
+  selectT.innerHTML = '<option value="">— selecionar —</option>';
+
+  selectedPlayers.forEach(nome => {
+    selectF.innerHTML += `<option value="${nome}">${nome}</option>`;
+    selectT.innerHTML += `<option value="${nome}">${nome}</option>`;
+  });
+}
 
 
 // ===== BOTÃO VER TABELA COMPLETA =====
@@ -519,6 +642,167 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderList();
   updateSortIndicators()
 });
+/* ================= ADMIN PANEL LOGIC ================= */
+
+const adminFab = document.getElementById("adminFab");
+const adminPanel = document.getElementById("adminPanel");
+const playerSearch = document.getElementById("playerSearch");
+const autocompleteList = document.getElementById("autocompleteList");
+const selectedPlayersBox = document.getElementById("selectedPlayers");
+const saveGameBtn = document.getElementById("saveGame");
+const loadGameBtn = document.getElementById("loadGame");
+
+let selectedPlayers = [];
+
+// abrir / fechar painel
+adminFab.onclick = () => {
+  adminPanel.classList.toggle("hidden");
+};
+
+// AUTOCOMPLETE
+playerSearch.addEventListener("input", () => {
+  const query = playerSearch.value.toLowerCase();
+  autocompleteList.innerHTML = "";
+
+  if (!query) return;
+
+  jogadoresFlask
+    .map(j => j.nome)
+    .filter(n =>
+      n.toLowerCase().includes(query) &&
+      !selectedPlayers.includes(n)
+    )
+    .forEach(name => {
+      const div = document.createElement("div");
+      div.className = "autocomplete-item";
+      div.textContent = name;
+      div.onclick = () => addPlayer(name);
+      autocompleteList.appendChild(div);
+    });
+});
+
+function addPlayer(name){
+  selectedPlayers.push(name);
+  playerSearch.value = "";
+  autocompleteList.innerHTML = "";
+  renderSelectedPlayers();
+}
+
+function removePlayer(name){
+  selectedPlayers = selectedPlayers.filter(n => n !== name);
+  renderSelectedPlayers();
+}
+
+function renderSelectedPlayers(){
+  selectedPlayersBox.innerHTML = "";
+  selectedPlayers.forEach(name => {
+    const pill = document.createElement("div");
+    pill.className = "player-pill";
+    pill.innerHTML = `
+      ${name}
+      <span onclick="removePlayer('${name}')">×</span>
+    `;
+    selectedPlayersBox.appendChild(pill);
+  });
+}
+
+// ===== ATUALIZAR =====
+loadGameBtn.onclick = async () => {
+  const date = document.getElementById("gameDate").value;
+  if (!date){
+    alert("Informe a data do jogo");
+    return;
+  }
+
+  selectedPlayers = [];
+  renderSelectedPlayers();
+
+  const resp = await fetch(`/api/jogo?data=${date}`);
+  if (!resp.ok) return;
+
+  const data = await resp.json();
+
+  selectedPlayers = data.jogadores || [];
+  renderSelectedPlayers();
+  atualizarSelectsTrofeu();
+
+  document.getElementById("trofeuF").value = data.feijoada || "";
+  document.getElementById("trofeuT").value = data.thy || "";
+};
+
+
+
+
+document.getElementById("gameDate").addEventListener("change", async () => {
+  const date = document.getElementById("gameDate").value;
+  if (!date) return;
+
+  const res = await fetch(`/api/jogo?data=${date}`);
+  if (!res.ok) return;
+
+  const data = await res.json();
+  selectedPlayers = data.jogadores || [];
+  renderSelectedPlayers();
+});
+
+function renderSelecionados() {
+  selectedPlayersDiv.innerHTML = "";
+  selecionados.forEach(nome => {
+    const pill = document.createElement("span");
+    pill.style.padding = "6px 10px";
+    pill.style.margin = "4px";
+    pill.style.borderRadius = "999px";
+    pill.style.background = "#e5e7eb";
+    pill.style.display = "inline-flex";
+    pill.style.alignItems = "center";
+    pill.innerHTML = `
+      ${nome}
+      <button style="margin-left:8px;border:none;background:none;cursor:pointer">✕</button>
+    `;
+    pill.querySelector("button").onclick = () => {
+      selecionados.delete(nome);
+      renderSelecionados();
+    };
+    selectedPlayersDiv.appendChild(pill);
+  });
+}
+saveGameBtn.onclick = async () => {
+  const date = document.getElementById("gameDate").value;
+  const senha = prompt("Digite a senha de administrador");
+
+  if (!date || !senha){
+    alert("Data e senha obrigatórias");
+    return;
+  }
+
+  const trofeuF = document.getElementById("trofeuF").value;
+  const trofeuT = document.getElementById("trofeuT").value;
+
+  const resp = await fetch("/api/jogo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      data: date,
+      jogadores: selectedPlayers,
+      feijoada: trofeuF,
+      thy: trofeuT,
+      senha: senha
+    })
+  });
+
+  const resJson = await resp.json();
+
+  if (!resp.ok){
+    alert(resJson.erro === "senha" ? "Senha incorreta" : "Erro ao salvar");
+    return;
+  }
+
+  alert("Jogo salvo com sucesso");
+  location.reload();
+};
+
+
+
 </script>
 
 

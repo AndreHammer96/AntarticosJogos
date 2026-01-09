@@ -1,10 +1,15 @@
+from flask import request, jsonify
 from flask import Flask, render_template, send_from_directory
+import json
 import pandas as pd
 import requests
 from io import StringIO
 from datetime import datetime
 import os
 import traceback
+import gspread
+from google.oauth2.service_account import Credentials
+
 
 app = Flask(__name__)
 
@@ -14,6 +19,8 @@ GOOGLE_SHEETS_URL = (
     f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export"
     f"?format=csv&gid={GID_JOGOS}"
 )
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "@Antarticos2026.#")
 
 def normalizar_valor(valor):
     if pd.isna(valor):
@@ -107,6 +114,66 @@ def index():
         col_datas=col_datas,
         atualizado_em=atualizado_em
     )
+def conectar_planilha():
+    if "GOOGLE_CREDENTIALS_JSON" in os.environ:
+        creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS_JSON"])
+        creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+    else:
+        creds = Credentials.from_service_account_file(
+            "credentials.json", scopes=SCOPES
+        )
+
+    client = gspread.authorize(creds)
+    return client.open_by_key(GOOGLE_SHEET_ID).get_worksheet_by_id(int(GID_JOGOS))
+
+@app.route("/api/jogo", methods=["GET"])
+def carregar_jogo():
+    feijoada = None
+    thy = None
+
+    data_iso = request.args.get("data")
+    data_jogo = formatar_data_planilha(data_iso)
+
+    if not data_jogo:
+        return jsonify({"jogadores": []})
+
+    ws = conectar_planilha()
+    dados = ws.get_all_values()
+
+    headers = dados[0]
+
+    if data_jogo not in headers:
+        return jsonify({"jogadores": []})
+
+    col_index = headers.index(data_jogo)
+
+    jogadores = []
+
+    for i in range(1, len(dados)):
+        linha = dados[i]
+
+        if not linha or len(linha) <= col_index:
+            continue
+
+        nome = linha[0].strip()
+        valor = str(linha[col_index]).strip().upper()
+
+        if valor == "1":
+            jogadores.append(nome)
+        elif valor == "F":
+            jogadores.append(nome)
+            feijoada = nome
+        elif valor == "T":
+            jogadores.append(nome)
+            thy = nome
+
+    return jsonify({
+        "jogadores": jogadores,
+        "feijoada": feijoada,
+        "thy": thy
+    })
+
+
 
 
 @app.route("/favicon.ico")
@@ -116,7 +183,85 @@ def favicon():
         "logo_v2.png",
         mimetype="image/png"
     )
+@app.route("/api/jogo", methods=["POST"])
+def salvar_jogo():
+    try:
+        data = request.json
+        feijoada = data.get("feijoada")
+        thy = data.get("thy")
 
+        senha = data.get("senha", "").strip()
+        data_iso = data.get("data")
+        jogadores = data.get("jogadores", [])
+
+        if senha != ADMIN_PASSWORD:
+            return jsonify({"erro": "senha"}), 403
+
+        if not data_iso:
+            return jsonify({"erro": "data"}), 400
+
+        # 🔥 CONVERSÃO ÚNICA E OBRIGATÓRIA
+        data_jogo = formatar_data_planilha(data_iso)
+
+        ws = conectar_planilha()
+        dados = ws.get_all_values()
+
+        headers = dados[0]
+
+        # 🔒 SE JÁ EXISTE, USA — SE NÃO, CRIA
+        if data_jogo in headers:
+            col_index = headers.index(data_jogo)
+        else:
+            ws.add_cols(1)
+            col_index = len(headers)
+            ws.update_cell(1, col_index + 1, data_jogo)
+
+        jogadores_upper = {j.upper() for j in jogadores}
+
+        updates = []
+
+        for i in range(1, len(dados)):
+            linha = dados[i]
+            if not linha or not linha[0]:
+                continue
+
+            nome = linha[0].strip().upper()
+            if feijoada and nome == feijoada.upper():
+                valor = "F"
+            elif thy and nome == thy.upper():
+                valor = "T"
+            elif nome in jogadores_upper:
+                valor = "1"
+            else:
+                valor = "0"
+
+
+
+            updates.append({
+                "range": gspread.utils.rowcol_to_a1(i + 1, col_index + 1),
+                "values": [[valor]]
+            })
+
+        if updates:
+            ws.batch_update(updates)
+
+        return jsonify({"ok": True})
+
+    except Exception as e:
+        print("ERRO AO SALVAR:", e)
+        traceback.print_exc()
+        return jsonify({"erro": "interno"}), 500
+
+
+
+def formatar_data_planilha(data_iso):
+    # YYYY-MM-DD -> DD/MM/YYYY
+    try:
+        dt = datetime.strptime(data_iso, "%Y-%m-%d")
+        return dt.strftime("%d/%m/%Y")
+    except Exception:
+        return None
 
 if __name__ == "__main__":
     app.run(debug=True)
+
