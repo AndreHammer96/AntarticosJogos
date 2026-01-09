@@ -131,6 +131,8 @@ def conectar_planilha():
     creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
     client = gspread.authorize(creds)
     return client.open_by_key(GOOGLE_SHEET_ID).get_worksheet_by_id(int(GID_JOGOS))
+    print("EMAIL:", bool(client_email))
+    print("KEY:", bool(private_key))
 
 
 @app.route("/api/jogo", methods=["GET"])
