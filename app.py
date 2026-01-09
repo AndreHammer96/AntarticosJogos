@@ -121,6 +121,8 @@ def conectar_planilha():
     if not private_key or not client_email:
         raise RuntimeError("Credenciais Google não configuradas corretamente")
 
+    private_key = private_key.replace("\\n", "\n")
+
     creds_dict = {
         "type": "service_account",
         "client_email": client_email,
@@ -131,6 +133,7 @@ def conectar_planilha():
     creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
     client = gspread.authorize(creds)
     return client.open_by_key(GOOGLE_SHEET_ID).get_worksheet_by_id(int(GID_JOGOS))
+
     print("EMAIL:", bool(client_email))
     print("KEY:", bool(private_key))
 
