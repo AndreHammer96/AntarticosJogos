@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SCOUTS ANTARTICOS</title>
+  <h1 class="page-title">⚽ DOSSIÊ DOS PÉ DE RATO QUE NAO VÃO JOGAR ⚽</h1>
+
+  <!-- Ícones -->
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/logo_v2.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='img/logo_v2.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/logo_v2.png') }}">
+  <link rel="icon" href="{{ url_for('static', filename='img/logo_v2.png') }}" type="image/png">
+
+  <style>
+	:root{
+	  --bg:#f7f8fa;
+	  --card:#fff;
+	  --muted:#6b7280;
+	  --accent:#10b981;
+	  --border:#e6e9ed;
+	}
+
+	body{
+	  font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
+	  background:var(--bg);
+	  margin:0;
+	  padding:20px;
+	  color:#111;
+	}
+
+	.wrap{max-width:none;margin:0 auto}
+
+	.card{
+	  background:var(--card);
+	  border-radius:12px;
+	  box-shadow:0 8px 20px rgba(20,30,40,0.06);
+	  padding:10px;
+	  border:2px solid var(--border);
+	  margin-bottom:50px;
+	}
+
+	.page-title{
+	  text-align:center;
+	  margin:0 auto 24px;
+	  color:#1f2937;
+	  font-size:3rem;
+	  font-weight:1000;
+	}
+
+	/* ================= GRID PRINCIPAL ================= */
+	/* Jogador | Jogos | F | T | % */
+	.players-header,
+	.row{
+	  display:grid;
+	  grid-template-columns: 
+		minmax(200px, 1fr)
+		70px
+		70px
+		70px
+		80px;
+	  align-items:center;
+	  column-gap:16px;
+	}
+
+	/* ================= HEADER ================= */
+	.players-header{
+	  padding:12px 8px;
+	  border-bottom:2px solid var(--border);
+	  background:#f8f9fa;
+	  border-radius:8px 8px 0 0;
+	}
+
+	.players-header .sortable{
+	  cursor:pointer;
+	  user-select:none;
+	  padding:8px 4px;
+	  border-radius:6px;
+	  transition:background-color .2s;
+	}
+
+	.players-header .sortable:hover{background:#e9ecef}
+
+	.sortable::after{
+	  content:"↕";
+	  margin-left:6px;
+	  font-size:12px;
+	  opacity:.6;
+	}
+
+	.sortable.asc::after{content:"↑";color:var(--accent);opacity:1}
+	.sortable.desc::after{content:"↓";color:var(--accent);opacity:1}
+
+	/* ================= LISTA ================= */
+	.list{
+	  border:1px solid var(--border);
+	  border-top:none;
+	  border-radius:0 0 8px 8px;
+	}
+
+	.row{
+	  padding:14px 8px;
+	  border-bottom:1px solid var(--border);
+	  transition:background-color .2s;
+	}
+
+	.row:hover{background:#f8f9fa}
+
+	.row .name{font-weight:600}
+
+	.row .qtd,
+	.row .pct{
+	  text-align:center;
+	  font-weight:600;
+	}
+
+	.row .pct{
+	  color:var(--muted);
+	  font-size:14px;
+	}
+
+	/* ================= BOTÃO ================= */
+	.expand-all-btn{
+	  width:100%;
+	  padding:12px;
+	  margin-top:16px;
+	  background:#f8f9fa;
+	  border:1px solid var(--border);
+	  border-radius:8px;
+	  cursor:pointer;
+	  font-weight:600;
+	}
+
+	.expand-all-btn:hover{background:#e9ecef}
+
+	/* ================= TABELA COMPLETA ================= */
+	.full-table{
+	  display:none;
+	  margin-top:16px;
+	  overflow:auto;
+	  max-height:70vh;
+	  border:1px solid var(--border);
+	  border-radius:8px;
+	}
+
+	.full-table table{
+	  width:100%;
+	  border-collapse:collapse;
+	  min-width:600px;
+	}
+
+	.full-table th,
+	.full-table td{
+	  padding:12px 8px;
+	  text-align:center;
+	  border:1px solid var(--border);
+	  font-size:13px;
+	}
+
+	.full-table th{
+	  background:#f8f9fa;
+	  font-weight:600;
+	  position:sticky;
+	  top:0;
+	  z-index:10;
+	}
+
+	.full-table .player-name{
+	  text-align:left;
+	  font-weight:600;
+	  background:#f8f9fa;
+	  position:sticky;
+	  left:0;
+	  z-index:5;
+	  min-width:150px;
+	}
+
+	.full-table td.present{
+	  background:#d1fae5;
+	  color:#065f46;
+	}
+
+	.full-table td.absent{
+	  background:#fee2e2;
+	  color:#991b1b;
+	}
+	/* ===== INPUTS DE DATA (RESTORE VISUAL ORIGINAL) ===== */
+	.period-selector input[type="date"]{
+	  padding:8px 12px;
+	  border-radius:8px;
+	  border:1px solid var(--border);
+	  background:#ffffff;
+	  font-weight:600;
+	  font-size:14px;
+	  color:#111;
+	}
+
+	.period-selector button{
+	  padding:8px 18px;
+	  border-radius:8px;
+	  background:var(--accent);
+	  color:#fff;
+	  border:none;
+	  font-weight:700;
+	  cursor:pointer;
+	}
+
+	.period-selector button:hover{
+	  opacity:0.9;
+	}
+	
+	.trofeu-icon{
+	  width:20px;
+	  height:20px;
+	  object-fit:contain;
+	  vertical-align:middle;
+	}
+
+
+</style>
+
+
+</head>
+
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="period">
+      <div class="range" id="periodRange"></div>
+      <div class="period-selector">
+        <input type="date" id="startDate" value="2025-01-01">
+        <span>até</span>
+        <input type="date" id="endDate" value="2025-12-31">
+        <button id="applyPeriod">Aplicar</button>
+      </div>
+    </div>
+
+    <div class="filters" style="margin-bottom:10px; display:flex; align-items:center; gap:10px;">
+      <input type="checkbox" id="showGuests" checked>
+      <label for="showGuests">Mostrar convidados</label>
+    </div>
+
+    <div class="main-content">
+      <div class="players-header">
+        <div class="player-name-sort sortable" id="sortByName">Jogador</div>
+        <div class="player-qtd-sort sortable" id="sortByQtd">Jogos</div>
+		<div class="player-qtd-sort sortable" id="sortByF">
+		  <img src="{{ url_for('static', filename='img/feijoada.png') }}"
+			   class="trofeu-icon"
+			   alt="Feijoada">
+		</div>
+		<div class="player-qtd-sort sortable" id="sortByT">
+		  <img src="{{ url_for('static', filename='img/thy.png') }}"
+			   class="trofeu-icon"
+			   alt="ThyOliveira">
+		</div>
+
+        <div class="player-pct-sort sortable" id="sortByPct">%</div>
+      </div>
+      <div class="list" id="playersList"></div>
+    </div>
+
+    <button class="expand-all-btn" id="expandAllBtn">📊 VER TABELA COMPLETA</button>
+    <div class="full-table" id="fullTable">
+      <table>
+        <thead id="fullTableHeader"></thead>
+        <tbody id="fullTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let jogadoresFlask = {{ jogadores | tojson | safe }};
+let games = {{ col_datas | tojson | safe }};
+let filteredGames = [...games];
+
+let currentSort = { field: 'name', direction: 'asc' };
+document.getElementById("periodRange").textContent =
+  `Jogos no período: ${filteredGames.length}`;
+
+function updateSortIndicators(){
+  const map = {
+    name: 'sortByName',
+    qtd: 'sortByQtd',
+    pct: 'sortByPct',
+    f:   'sortByF',
+    t:   'sortByT'
+  };
+
+  Object.values(map).forEach(id=>{
+    const el = document.getElementById(id);
+    el.classList.remove('asc','desc');
+  });
+
+  const active = document.getElementById(map[currentSort.field]);
+  if (active) active.classList.add(currentSort.direction);
+}
+
+function sortPlayers(field){
+  if(currentSort.field === field){
+    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort.field = field;
+    currentSort.direction = 'asc';
+  }
+
+  jogadoresFlask.sort((a,b)=>{
+    let A, B;
+
+    if(field === 'name'){
+      A = a.nome.toLowerCase();
+      B = b.nome.toLowerCase();
+      return currentSort.direction === 'asc'
+        ? A.localeCompare(B)
+        : B.localeCompare(A);
+    }
+
+    if(field === 'qtd'){
+	  A = calcularJogosPeriodo(a);
+	  B = calcularJogosPeriodo(b);
+	}
+
+
+    if(field === 'pct'){
+	  A = filteredGames.length ? calcularJogosPeriodo(a) / filteredGames.length : 0;
+	  B = filteredGames.length ? calcularJogosPeriodo(b) / filteredGames.length : 0;
+	}
+
+	
+	if(field === 'f'){
+	  A = calcularTrofeuFPeriodo(a);
+	  B = calcularTrofeuFPeriodo(b);
+	}
+
+
+	if(field === 't'){
+	  A = calcularTrofeuTPeriodo(a);
+	  B = calcularTrofeuTPeriodo(b);
+	}
+
+
+
+    return currentSort.direction === 'asc' ? A - B : B - A;
+  });
+
+  updateSortIndicators();
+  renderList();
+  if (document.getElementById('fullTable').style.display === 'block') {
+    renderFullTable();
+  }
+}
+function calcularJogosPeriodo(jogador){
+  let total = 0;
+
+  for (const d of filteredGames){
+    const info = jogador.jogos[d];
+    if (info && info.jogou === true){
+      total++;
+    }
+  }
+
+  return total;
+}
+function calcularTrofeuFPeriodo(jogador){
+  let total = 0;
+
+  for (const d of filteredGames){
+    const info = jogador.jogos[d];
+    if (info && info.jogou === true && info.flag === 'F'){
+      total++;
+    }
+  }
+
+  return total;
+}
+
+function calcularTrofeuTPeriodo(jogador){
+  let total = 0;
+
+  for (const d of filteredGames){
+    const info = jogador.jogos[d];
+    if (info && info.jogou === true && info.flag === 'T'){
+      total++;
+    }
+  }
+
+  return total;
+}
+
+function renderList(){
+  const container = document.getElementById('playersList');
+  container.innerHTML='';
+
+  jogadoresFlask.forEach(j=>{
+    const jogosPeriodo   = calcularJogosPeriodo(j);
+    const trofeuFPeriodo = calcularTrofeuFPeriodo(j);
+    const trofeuTPeriodo = calcularTrofeuTPeriodo(j);
+
+    const row=document.createElement('div');
+    row.className='row';
+    row.innerHTML=`
+      <div class="name">${j.tipo === "time" ? '🐧 ' : ''}${j.nome}</div>
+      <div class="qtd">${jogosPeriodo}</div>
+      <div class="qtd">${trofeuFPeriodo}</div>
+      <div class="qtd">${trofeuTPeriodo}</div>
+      <div class="pct">
+        ${filteredGames.length
+          ? ((jogosPeriodo / filteredGames.length) * 100).toFixed(1)
+          : '0.0'}%
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+
+document.getElementById("applyPeriod").addEventListener("click", () => {
+  const start = document.getElementById("startDate").value;
+  const end   = document.getElementById("endDate").value;
+
+  if (!start || !end) {
+    alert("Selecione as duas datas!");
+    return;
+  }
+
+  // dd/mm/yyyy → Date
+  function parseDateBR(d){
+    const [dd,mm,yy] = d.split("/");
+    return new Date(`${yy}-${mm}-${dd}`);
+  }
+
+  const startDate = new Date(start); // yyyy-mm-dd
+  const endDate   = new Date(end);
+
+  filteredGames = games.filter(d => {
+    const dt = parseDateBR(d);
+    return dt >= startDate && dt <= endDate;
+  });
+
+  // atualiza contador
+  document.getElementById("periodRange").textContent =
+    `Jogos no período: ${filteredGames.length}`;
+
+  renderList();
+
+  if (document.getElementById("fullTable").style.display === "block") {
+    renderFullTable();
+  }
+});
+
+document.getElementById('sortByName').onclick = ()=>sortPlayers('name');
+document.getElementById('sortByQtd').onclick  = ()=>sortPlayers('qtd');
+document.getElementById('sortByF').onclick = ()=>sortPlayers('f');
+document.getElementById('sortByT').onclick = ()=>sortPlayers('t');
+document.getElementById('sortByPct').onclick  = ()=>sortPlayers('pct');
+
+function renderFullTable(){
+  const header = document.getElementById('fullTableHeader');
+  const body   = document.getElementById('fullTableBody');
+
+  header.innerHTML =
+    '<tr><th class="player-name">Jogador</th>' +
+    filteredGames.map(d => `<th>${d}</th>`).join('') +
+    '</tr>';
+
+  body.innerHTML = '';
+
+  jogadoresFlask.forEach(j => {
+    let row = `
+      <tr>
+        <td class="player-name">
+          ${j.tipo === "time" ? '🐧 ' : ''}${j.nome}
+        </td>
+    `;
+
+    for (const d of filteredGames) {
+      const info = j.jogos[d];   // 👈 OBJETO
+
+      let classe  = 'absent';
+      let simbolo = '✗';
+
+      if (info && info.jogou === true) {
+        classe = 'present';
+        simbolo = '✓';
+
+		if (info.flag === 'F') {
+		  simbolo = `<img src="/static/img/feijoada.png" class="trofeu-icon" alt="Feijoada">`;
+		}
+        if (info.flag === 'T') {
+		  simbolo = `<img src="/static/img/thy.png" class="trofeu-icon" alt="ThyOliveira">`;
+		}
+      }
+
+      row += `<td class="${classe}">${simbolo}</td>`;
+    }
+
+    row += '</tr>';
+    body.innerHTML += row;
+  });
+}
+
+
+
+// ===== BOTÃO VER TABELA COMPLETA =====
+document.getElementById('expandAllBtn').addEventListener('click', () => {
+  const table = document.getElementById('fullTable');
+  const isVisible = table.style.display === 'block';
+
+  table.style.display = isVisible ? 'none' : 'block';
+
+  if (!isVisible) {
+    renderFullTable();
+  }
+});
+
+
+document.addEventListener('DOMContentLoaded',()=>{
+  renderList();
+  updateSortIndicators()
+});
+</script>
+
+
+</body>
+</html>
