@@ -502,9 +502,13 @@ function calcularTrofeuTPeriodo(jogador){
 function renderList(){
   const container = document.getElementById('playersList');
   container.innerHTML='';
+  
+  const showGuests = document.getElementById("showGuests")?.checked;
 
   jogadoresFlask.forEach(j=>{
-    const jogosPeriodo   = calcularJogosPeriodo(j);
+	if (!showGuests && j.tipo === "convidado") return;
+
+	const jogosPeriodo   = calcularJogosPeriodo(j);
     const trofeuFPeriodo = calcularTrofeuFPeriodo(j);
     const trofeuTPeriodo = calcularTrofeuTPeriodo(j);
 
@@ -566,9 +570,11 @@ document.getElementById('sortByF').onclick = ()=>sortPlayers('f');
 document.getElementById('sortByT').onclick = ()=>sortPlayers('t');
 document.getElementById('sortByPct').onclick  = ()=>sortPlayers('pct');
 
-function renderFullTable(){
+function renderFullTable() {
   const header = document.getElementById('fullTableHeader');
   const body   = document.getElementById('fullTableBody');
+
+  const showGuests = document.getElementById("showGuests")?.checked;
 
   header.innerHTML =
     '<tr><th class="player-name">Jogador</th>' +
@@ -578,6 +584,9 @@ function renderFullTable(){
   body.innerHTML = '';
 
   jogadoresFlask.forEach(j => {
+
+    if (!showGuests && j.tipo === "convidado") return;
+
     let row = `
       <tr>
         <td class="player-name">
@@ -586,7 +595,7 @@ function renderFullTable(){
     `;
 
     for (const d of filteredGames) {
-      const info = j.jogos[d];   // 👈 OBJETO
+      const info = j.jogos[d];
 
       let classe  = 'absent';
       let simbolo = '✗';
@@ -595,12 +604,12 @@ function renderFullTable(){
         classe = 'present';
         simbolo = '✓';
 
-		if (info.flag === 'F') {
-		  simbolo = `<img src="/static/img/feijoada.png" class="trofeu-icon" alt="Feijoada">`;
-		}
+        if (info.flag === 'F') {
+          simbolo = `<img src="/static/img/feijoada.png" class="trofeu-icon">`;
+        }
         if (info.flag === 'T') {
-		  simbolo = `<img src="/static/img/thy.png" class="trofeu-icon" alt="ThyOliveira">`;
-		}
+          simbolo = `<img src="/static/img/thy.png" class="trofeu-icon">`;
+        }
       }
 
       row += `<td class="${classe}">${simbolo}</td>`;
@@ -610,6 +619,13 @@ function renderFullTable(){
     body.innerHTML += row;
   });
 }
+document.getElementById("showGuests").addEventListener("change", () => {
+  renderList();
+  if (document.getElementById("fullTable").style.display === "block") {
+    renderFullTable();
+  }
+});
+
 
 function atualizarSelectsTrofeu(){
   const selectF = document.getElementById("trofeuF");
